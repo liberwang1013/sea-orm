@@ -436,7 +436,11 @@ pub(crate) fn join_condition(rel: RelationDef) -> SimpleExpr {
     let owner_keys = rel.from_col;
     let foreign_keys = rel.to_col;
 
-    join_tbl_on_condition(from_tbl, to_tbl, owner_keys, foreign_keys)
+    let mut expr = join_tbl_on_condition(from_tbl, to_tbl, owner_keys, foreign_keys);
+    if let Some(extra_codition) = rel.extra_codition {
+        expr = expr.and(extra_codition);
+    }
+    expr
 }
 
 pub(crate) fn join_tbl_on_condition(
