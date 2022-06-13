@@ -1,6 +1,6 @@
 use crate::{EntityTrait, Identity, IdentityOf, Iterable, QuerySelect, Select};
 use core::marker::PhantomData;
-use sea_query::{JoinType, TableRef};
+use sea_query::{JoinType, TableRef, SimpleExpr};
 use std::fmt::Debug;
 
 /// Defines the type of relationship
@@ -54,6 +54,8 @@ pub struct RelationDef {
     pub from_col: Identity,
     /// Reference to another column
     pub to_col: Identity,
+    /// extra condition
+    pub extra_condition: Option<SimpleExpr>,
     /// Defines the owner of the Relation
     pub is_owner: bool,
     /// Defines an operation to be performed on a Foreign Key when a
@@ -79,6 +81,7 @@ where
     to_tbl: TableRef,
     from_col: Option<Identity>,
     to_col: Option<Identity>,
+    extra_condition: Option<SimpleExpr>,
     is_owner: bool,
     on_delete: Option<ForeignKeyAction>,
     on_update: Option<ForeignKeyAction>,
@@ -94,6 +97,7 @@ impl RelationDef {
             to_tbl: self.from_tbl,
             from_col: self.to_col,
             to_col: self.from_col,
+            extra_condition: self.extra_condition,
             is_owner: !self.is_owner,
             on_delete: self.on_delete,
             on_update: self.on_update,
@@ -115,6 +119,7 @@ where
             to_tbl: to.table_ref(),
             from_col: None,
             to_col: None,
+            extra_condition: None,
             is_owner,
             on_delete: None,
             on_update: None,
@@ -130,6 +135,7 @@ where
             to_tbl: rel.to_tbl,
             from_col: Some(rel.from_col),
             to_col: Some(rel.to_col),
+            extra_condition: None,
             is_owner,
             on_delete: None,
             on_update: None,
@@ -186,6 +192,7 @@ where
             to_tbl: b.to_tbl,
             from_col: b.from_col.unwrap(),
             to_col: b.to_col.unwrap(),
+            extra_condition: b.extra_condition,
             is_owner: b.is_owner,
             on_delete: b.on_delete,
             on_update: b.on_update,
