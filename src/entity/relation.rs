@@ -55,7 +55,7 @@ pub struct RelationDef {
     /// Reference to another column
     pub to_col: Identity,
     /// extra condition
-    pub extra_codition: Option<SimpleExpr>,
+    pub extra_condition: Option<SimpleExpr>,
     /// Defines the owner of the Relation
     pub is_owner: bool,
     /// Defines an operation to be performed on a Foreign Key when a
@@ -97,7 +97,7 @@ impl RelationDef {
             to_tbl: self.from_tbl,
             from_col: self.to_col,
             to_col: self.from_col,
-            extra_codition: self.extra_codition,
+            extra_condition: self.extra_condition,
             is_owner: !self.is_owner,
             on_delete: self.on_delete,
             on_update: self.on_update,
@@ -192,7 +192,7 @@ where
             to_tbl: b.to_tbl,
             from_col: b.from_col.unwrap(),
             to_col: b.to_col.unwrap(),
-            extra_codition: b.extra_condition,
+            extra_condition: b.extra_condition,
             is_owner: b.is_owner,
             on_delete: b.on_delete,
             on_update: b.on_update,

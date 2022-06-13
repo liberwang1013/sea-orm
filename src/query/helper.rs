@@ -437,8 +437,8 @@ pub(crate) fn join_condition(rel: RelationDef) -> SimpleExpr {
     let foreign_keys = rel.to_col;
 
     let mut expr = join_tbl_on_condition(from_tbl, to_tbl, owner_keys, foreign_keys);
-    if let Some(extra_codition) = rel.extra_codition {
-        expr = expr.and(extra_codition);
+    if let Some(extra_condition) = rel.extra_condition {
+        expr = expr.and(extra_condition);
     }
     expr
 }
