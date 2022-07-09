@@ -107,16 +107,24 @@ where
             if <A::Entity as EntityTrait>::PrimaryKey::from_column(col).is_some() {
                 continue;
             }
+            let col_def = col.def();
+            let col_type = col_def.get_column_type();
             let av = self.model.get(col);
             if av.is_set() {
                 let val = Expr::val(av.into_value().unwrap());
-                let col_def = col.def();
-                let col_type = col_def.get_column_type();
                 let expr = match col_type.get_enum_name() {
                     Some(enum_name) => val.as_enum(Alias::new(enum_name)),
                     None => val.into(),
                 };
                 self.query.value_expr(col, expr);
+            } else if col_def.updated_at {
+                if cfg!(feature = "with-chrono") {
+                    let expr = Expr::value(chrono::Utc::now());
+                    self.query.value_expr(col, expr);
+                } else if cfg!(feature = "with-time") {
+                    let expr = Expr::value(time::OffsetDateTime::now_utc());
+                    self.query.value_expr(col, expr);
+                };
             }
         }
         self
