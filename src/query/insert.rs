@@ -130,6 +130,8 @@ where
         let columns_empty = self.columns.is_empty();
         for (idx, col) in <A::Entity as EntityTrait>::Column::iter().enumerate() {
             let av = am.take(col);
+            let col_def = col.def();
+            let col_type = col_def.get_column_type();
             let av_has_val = av.is_set() || av.is_unchanged();
             if columns_empty {
                 self.columns.push(av_has_val);
