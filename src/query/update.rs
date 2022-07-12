@@ -3,7 +3,7 @@ use crate::{
     QueryTrait,
 };
 use core::marker::PhantomData;
-use sea_query::{Alias, Expr, IntoIden, SimpleExpr, UpdateStatement};
+use sea_query::{Alias, Expr, Function, IntoIden, SimpleExpr, UpdateStatement};
 
 /// Defines a structure to perform UPDATE query operations on a ActiveModel
 #[derive(Clone, Debug)]
@@ -118,13 +118,10 @@ where
                 };
                 self.query.value_expr(col, expr);
             } else if col_def.updated_at {
-                if cfg!(feature = "with-chrono") {
-                    let expr = Expr::value(chrono::Utc::now());
-                    self.query.value_expr(col, expr);
-                } else if cfg!(feature = "with-time") {
-                    let expr = Expr::value(time::OffsetDateTime::now_utc());
-                    self.query.value_expr(col, expr);
-                };
+                self.query.value_expr(
+                    col,
+                    SimpleExpr::FunctionCall(Function::CurrentTimestamp, vec![]),
+                );
             }
         }
         self

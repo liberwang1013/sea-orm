@@ -3,7 +3,7 @@ use crate::{
     PrimaryKeyTrait, QueryTrait,
 };
 use core::marker::PhantomData;
-use sea_query::{Alias, Expr, InsertStatement, OnConflict, ValueTuple};
+use sea_query::{Alias, Expr, Function, InsertStatement, OnConflict, SimpleExpr, ValueTuple};
 
 /// Performs INSERT operations on a ActiveModel
 #[derive(Debug)]
@@ -145,11 +145,7 @@ where
                 values.push(expr);
             } else if col_def.created_at || col_def.updated_at {
                 columns.push(col);
-                if cfg!(feature = "with-chrono") {
-                    values.push(Expr::value(chrono::Utc::now()));
-                } else if cfg!(feature = "with-time") {
-                    values.push(Expr::value(time::OffsetDateTime::now_utc()));
-                }
+                values.push(SimpleExpr::FunctionCall(Function::CurrentTimestamp, vec![]))
             }
         }
         self.query.columns(columns);
