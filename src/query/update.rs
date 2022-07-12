@@ -3,7 +3,11 @@ use crate::{
     QueryFilter, QueryTrait,
 };
 use core::marker::PhantomData;
+<<<<<<< HEAD
 use sea_query::{Expr, IntoIden, SimpleExpr, UpdateStatement};
+=======
+use sea_query::{Alias, Expr, Function, IntoIden, SimpleExpr, UpdateStatement};
+>>>>>>> 7916606d (try using sql function to get timestamp)
 
 /// Defines a structure to perform UPDATE query operations on a ActiveModel
 #[derive(Clone, Debug)]
