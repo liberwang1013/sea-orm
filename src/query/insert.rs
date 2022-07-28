@@ -3,7 +3,7 @@ use crate::{
     PrimaryKeyTrait, QueryTrait,
 };
 use core::marker::PhantomData;
-use sea_query::{Alias, Expr, InsertStatement, OnConflict, ValueTuple};
+use sea_query::{Alias, Expr, Function, InsertStatement, OnConflict, SimpleExpr, ValueTuple};
 
 /// Performs INSERT operations on a ActiveModel
 #[derive(Debug)]
@@ -126,22 +126,26 @@ where
         let columns_empty = self.columns.is_empty();
         for (idx, col) in <A::Entity as EntityTrait>::Column::iter().enumerate() {
             let av = am.take(col);
+            let col_def = col.def();
+            let col_type = col_def.get_column_type();
             let av_has_val = av.is_set() || av.is_unchanged();
             if columns_empty {
                 self.columns.push(av_has_val);
             } else if self.columns[idx] != av_has_val {
                 panic!("columns mismatch");
             }
+
             if av_has_val {
                 columns.push(col);
                 let val = Expr::val(av.into_value().unwrap());
-                let col_def = col.def();
-                let col_type = col_def.get_column_type();
                 let expr = match col_type.get_enum_name() {
                     Some(enum_name) => val.as_enum(Alias::new(enum_name)),
                     None => val.into(),
                 };
                 values.push(expr);
+            } else if col_def.created_at || col_def.updated_at {
+                columns.push(col);
+                values.push(SimpleExpr::FunctionCall(Function::CurrentTimestamp, vec![]))
             }
         }
         self.query.columns(columns);
