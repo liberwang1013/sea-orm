@@ -3,7 +3,7 @@ use crate::{
     PrimaryKeyTrait, QueryTrait,
 };
 use core::marker::PhantomData;
-use sea_query::{Alias, Expr, Function, InsertStatement, OnConflict, SimpleExpr, ValueTuple};
+use sea_query::{Alias, Expr, Func, InsertStatement, OnConflict, ValueTuple};
 
 /// Performs INSERT operations on a ActiveModel
 #[derive(Debug)]
@@ -128,14 +128,22 @@ where
             let av = am.take(col);
             let col_def = col.def();
             let col_type = col_def.get_column_type();
-            let av_has_val = av.is_set() || av.is_unchanged();
+            let insert_timestamp_col = col_def.created_at || col_def.updated_at;
+            let av_has_val = av.is_set() || av.is_unchanged() || insert_timestamp_col;
             if columns_empty {
                 self.columns.push(av_has_val);
             } else if self.columns[idx] != av_has_val {
                 panic!("columns mismatch");
             }
 
-            if av_has_val {
+            if insert_timestamp_col {
+                columns.push(col);
+                let val = match av.into_value() {
+                    Some(v) => Expr::value(v),
+                    None => Func::current_timestamp(),
+                };
+                values.push(val);
+            } else if av_has_val {
                 columns.push(col);
                 let val = Expr::val(av.into_value().unwrap());
                 let expr = match col_type.get_enum_name() {
@@ -143,9 +151,6 @@ where
                     None => val.into(),
                 };
                 values.push(expr);
-            } else if col_def.created_at || col_def.updated_at {
-                columns.push(col);
-                values.push(SimpleExpr::FunctionCall(Function::CurrentTimestamp, vec![]))
             }
         }
         self.query.columns(columns);

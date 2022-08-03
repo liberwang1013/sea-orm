@@ -41,6 +41,7 @@ pub async fn create_tables(db: &DatabaseConnection) -> Result<(), DbErr> {
     create_active_enum_table(db).await?;
     create_active_enum_child_table(db).await?;
     create_insert_default_table(db).await?;
+    create_check_table(db).await?;
 
     Ok(())
 }
@@ -325,4 +326,31 @@ pub async fn create_json_struct_table(db: &DbConn) -> Result<ExecResult, DbErr> 
         .to_owned();
 
     create_table(db, &stmt, JsonStruct).await
+}
+
+pub async fn create_check_table(db: &DbConn) -> Result<ExecResult, DbErr> {
+    let stmt = sea_query::Table::create()
+        .table(check::Entity)
+        .col(
+            ColumnDef::new(check::Column::Id)
+                .integer()
+                .not_null()
+                .auto_increment()
+                .primary_key(),
+        )
+        .col(ColumnDef::new(check::Column::Pay).string().not_null())
+        .col(ColumnDef::new(check::Column::Amount).double().not_null())
+        .col(
+            ColumnDef::new(check::Column::UpdatedAt)
+                .timestamp_with_time_zone()
+                .not_null(),
+        )
+        .col(
+            ColumnDef::new(check::Column::CreatedAt)
+                .timestamp_with_time_zone()
+                .not_null(),
+        )
+        .to_owned();
+
+    create_table(db, &stmt, Check).await
 }
