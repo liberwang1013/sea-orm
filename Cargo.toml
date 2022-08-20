@@ -12,6 +12,7 @@ documentation = "https://docs.rs/sea-orm"
 repository = "https://github.com/SeaQL/sea-orm"
 categories = ["database"]
 keywords = ["async", "orm", "mysql", "postgres", "sqlite"]
+rust-version = "1.60"
 
 [package.metadata.docs.rs]
 features = ["default", "sqlx-all", "mock", "runtime-async-std-native-tls"]
@@ -24,7 +25,7 @@ path = "src/lib.rs"
 [dependencies]
 async-stream = { version = "^0.3" }
 async-trait = { version = "^0.1" }
-chrono = { version = "^0.4", optional = true }
+chrono = { version = "^0.4.20", default-features = false, features = ["clock"], optional = true }
 time = { version = "^0.3", optional = true }
 futures = { version = "^0.3" }
 futures-util = { version = "^0.3" }
