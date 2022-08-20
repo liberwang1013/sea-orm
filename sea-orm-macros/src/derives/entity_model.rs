@@ -90,6 +90,7 @@ pub fn expand_derive_entity_model(data: Data, attrs: Vec<Attribute>) -> syn::Res
                     let mut nullable = false;
                     let mut default_value = None;
                     let mut default_expr = None;
+                    let mut extra = None;
                     let mut created_at = false;
                     let mut updated_at = false;
                     let mut indexed = false;
@@ -171,6 +172,8 @@ pub fn expand_derive_entity_model(data: Data, attrs: Vec<Attribute>) -> syn::Res
                                                         format!("Invalid enum_name {:?}", nv.lit),
                                                     ));
                                                 }
+                                            } else if name == "extra" {
+                                                extra = Some(nv.lit.to_owned());
                                             }
                                         }
                                     }
@@ -311,6 +314,9 @@ pub fn expand_derive_entity_model(data: Data, attrs: Vec<Attribute>) -> syn::Res
                     }
                     if let Some(default_expr) = default_expr {
                         match_row = quote! { #match_row.default_expr(#default_expr) };
+                    }
+                    if let Some(extra) = extra {
+                        match_row = quote! { #match_row.extra(#extra.into()) };
                     }
                     columns_trait.push(match_row);
                 }

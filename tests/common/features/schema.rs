@@ -340,8 +340,16 @@ pub async fn create_check_table(db: &DbConn) -> Result<ExecResult, DbErr> {
         )
         .col(ColumnDef::new(check::Column::Pay).string().not_null())
         .col(ColumnDef::new(check::Column::Amount).double().not_null())
-        .col(ColumnDef::new(check::Column::UpdatedAt).timestamp_with_time_zone())
-        .col(ColumnDef::new(check::Column::CreatedAt).timestamp_with_time_zone())
+        .col(
+            ColumnDef::new(check::Column::UpdatedAt)
+                .timestamp_with_time_zone()
+                .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+        )
+        .col(
+            ColumnDef::new(check::Column::CreatedAt)
+                .timestamp_with_time_zone()
+                .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+        )
         .to_owned();
 
     create_table(db, &stmt, Check).await
