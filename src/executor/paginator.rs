@@ -18,8 +18,8 @@ where
     S: SelectorTrait + 'db,
 {
     pub(crate) query: SelectStatement,
-    pub(crate) page: usize,
-    pub(crate) page_size: usize,
+    pub(crate) page: u64,
+    pub(crate) page_size: u64,
     pub(crate) db: &'db C,
     pub(crate) selector: PhantomData<S>,
 }
@@ -28,9 +28,9 @@ where
 #[derive(Clone, Debug)]
 pub struct ItemsAndPagesNumber {
     /// The total number of items of a paginator
-    pub number_of_items: usize,
+    pub number_of_items: u64,
     /// The total number of pages of a paginator
-    pub number_of_pages: usize,
+    pub number_of_pages: u64,
 }
 
 // LINT: warn if paginator is used without an order by clause
@@ -41,7 +41,7 @@ where
     S: SelectorTrait + 'db,
 {
     /// Fetch a specific page; page index starts from zero
-    pub async fn fetch_page(&self, page: usize) -> Result<Vec<S::Item>, DbErr> {
+    pub async fn fetch_page(&self, page: u64) -> Result<Vec<S::Item>, DbErr> {
         let query = self
             .query
             .clone()
@@ -65,7 +65,7 @@ where
     }
 
     /// Get the total number of items
-    pub async fn num_items(&self) -> Result<usize, DbErr> {
+    pub async fn num_items(&self) -> Result<u64, DbErr> {
         let builder = self.db.get_database_backend();
         let stmt = builder.build(
             SelectStatement::new()
@@ -80,14 +80,14 @@ where
             None => return Ok(0),
         };
         let num_items = match builder {
-            DbBackend::Postgres => result.try_get::<i64>("", "num_items")? as usize,
-            _ => result.try_get::<i32>("", "num_items")? as usize,
+            DbBackend::Postgres => result.try_get::<i64>("", "num_items")? as u64,
+            _ => result.try_get::<i32>("", "num_items")? as u64,
         };
         Ok(num_items)
     }
 
     /// Get the total number of pages
-    pub async fn num_pages(&self) -> Result<usize, DbErr> {
+    pub async fn num_pages(&self) -> Result<u64, DbErr> {
         let num_items = self.num_items().await?;
         let num_pages = self.compute_pages_number(num_items);
         Ok(num_pages)
@@ -105,8 +105,8 @@ where
     }
 
     /// Compute the number of pages for the current page
-    fn compute_pages_number(&self, num_items: usize) -> usize {
-        (num_items / self.page_size) + (num_items % self.page_size > 0) as usize
+    fn compute_pages_number(&self, num_items: u64) -> u64 {
+        (num_items / self.page_size) + (num_items % self.page_size > 0) as u64
     }
 
     /// Increment the page counter
@@ -115,7 +115,7 @@ where
     }
 
     /// Get current page number
-    pub fn cur_page(&self) -> usize {
+    pub fn cur_page(&self) -> u64 {
         self.page
     }
 
@@ -215,10 +215,10 @@ where
     type Selector: SelectorTrait + Send + Sync + 'db;
 
     /// Paginate the result of a select operation.
-    fn paginate(self, db: &'db C, page_size: usize) -> Paginator<'db, C, Self::Selector>;
+    fn paginate(self, db: &'db C, page_size: u64) -> Paginator<'db, C, Self::Selector>;
 
     /// Perform a count on the paginated results
-    async fn count(self, db: &'db C) -> Result<usize, DbErr>
+    async fn count(self, db: &'db C) -> Result<u64, DbErr>
     where
         Self: Send + Sized,
     {
@@ -233,7 +233,8 @@ where
 {
     type Selector = S;
 
-    fn paginate(self, db: &'db C, page_size: usize) -> Paginator<'db, C, S> {
+    fn paginate(self, db: &'db C, page_size: u64) -> Paginator<'db, C, S> {
+        assert!(page_size != 0, "page_size should not be zero");
         Paginator {
             query: self.query,
             page: 0,
@@ -250,8 +251,9 @@ where
     S: SelectorTrait + Send + Sync + 'db,
 {
     type Selector = S;
-    fn paginate(self, db: &'db C, page_size: usize) -> Paginator<'db, C, S> {
-        let sql = &self.stmt.sql[6..];
+    fn paginate(self, db: &'db C, page_size: u64) -> Paginator<'db, C, S> {
+        assert!(page_size != 0, "page_size should not be zero");
+        let sql = &self.stmt.sql.trim()[6..].trim();
         let mut query = SelectStatement::new();
         query.expr(if let Some(values) = self.stmt.values {
             Expr::cust_with_values(sql, values.0)
@@ -277,7 +279,7 @@ where
 {
     type Selector = SelectModel<M>;
 
-    fn paginate(self, db: &'db C, page_size: usize) -> Paginator<'db, C, Self::Selector> {
+    fn paginate(self, db: &'db C, page_size: u64) -> Paginator<'db, C, Self::Selector> {
         self.into_model().paginate(db, page_size)
     }
 }
@@ -292,7 +294,7 @@ where
 {
     type Selector = SelectTwoModel<M, N>;
 
-    fn paginate(self, db: &'db C, page_size: usize) -> Paginator<'db, C, Self::Selector> {
+    fn paginate(self, db: &'db C, page_size: u64) -> Paginator<'db, C, Self::Selector> {
         self.into_model().paginate(db, page_size)
     }
 }
@@ -306,6 +308,7 @@ mod tests {
     use crate::{DatabaseConnection, DbBackend, MockDatabase, Transaction};
     use futures::TryStreamExt;
     use once_cell::sync::Lazy;
+    use pretty_assertions::assert_eq;
     use sea_query::{Alias, Expr, SelectStatement, Value};
 
     static RAW_STMT: Lazy<Statement> = Lazy::new(|| {
@@ -492,9 +495,9 @@ mod tests {
     async fn num_pages() -> Result<(), DbErr> {
         let (db, num_items) = setup_num_items();
 
-        let num_items = num_items as usize;
-        let page_size = 2_usize;
-        let num_pages = (num_items / page_size) + (num_items % page_size > 0) as usize;
+        let num_items = num_items as u64;
+        let page_size = 2_u64;
+        let num_pages = (num_items / page_size) + (num_items % page_size > 0) as u64;
         let paginator = fruit::Entity::find().paginate(&db, page_size);
 
         assert_eq!(paginator.num_pages().await?, num_pages);
@@ -524,9 +527,9 @@ mod tests {
     async fn num_pages_raw() -> Result<(), DbErr> {
         let (db, num_items) = setup_num_items();
 
-        let num_items = num_items as usize;
-        let page_size = 2_usize;
-        let num_pages = (num_items / page_size) + (num_items % page_size > 0) as usize;
+        let num_items = num_items as u64;
+        let page_size = 2_u64;
+        let num_pages = (num_items / page_size) + (num_items % page_size > 0) as u64;
         let paginator = fruit::Entity::find()
             .from_raw_sql(RAW_STMT.clone())
             .paginate(&db, page_size);
@@ -725,5 +728,54 @@ mod tests {
 
         assert_eq!(db.into_transaction_log(), Transaction::wrap(stmts));
         Ok(())
+    }
+
+    #[smol_potat::test]
+    async fn into_stream_raw_leading_spaces() -> Result<(), DbErr> {
+        let (db, pages) = setup();
+
+        let raw_stmt = Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            r#"  SELECT "fruit"."id", "fruit"."name", "fruit"."cake_id" FROM "fruit"  "#,
+            vec![],
+        );
+
+        let mut fruit_stream = fruit::Entity::find()
+            .from_raw_sql(raw_stmt.clone())
+            .paginate(&db, 2)
+            .into_stream();
+
+        assert_eq!(fruit_stream.try_next().await?, Some(pages[0].clone()));
+        assert_eq!(fruit_stream.try_next().await?, Some(pages[1].clone()));
+        assert_eq!(fruit_stream.try_next().await?, None);
+
+        drop(fruit_stream);
+
+        let mut select = SelectStatement::new()
+            .exprs(vec![
+                Expr::tbl(fruit::Entity, fruit::Column::Id),
+                Expr::tbl(fruit::Entity, fruit::Column::Name),
+                Expr::tbl(fruit::Entity, fruit::Column::CakeId),
+            ])
+            .from(fruit::Entity)
+            .to_owned();
+
+        let query_builder = db.get_database_backend();
+        let stmts = vec![
+            query_builder.build(select.clone().offset(0).limit(2)),
+            query_builder.build(select.clone().offset(2).limit(2)),
+            query_builder.build(select.offset(4).limit(2)),
+        ];
+
+        assert_eq!(db.into_transaction_log(), Transaction::wrap(stmts));
+        Ok(())
+    }
+
+    #[smol_potat::test]
+    #[should_panic]
+    async fn error() {
+        let (db, _pages) = setup();
+
+        fruit::Entity::find().paginate(&db, 0);
     }
 }
