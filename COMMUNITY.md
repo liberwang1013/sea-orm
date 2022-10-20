@@ -21,6 +21,7 @@ If you have built an app using SeaORM and want to showcase it, feel free to open
 - [Quasar](https://github.com/Technik97/Quasar) | Rust REST API using Actix-Web, SeaOrm and Postgres with Svelte Typescript Frontend | DB: Postgres
 - [actix-react-starter-template](https://github.com/aslamplr/actix-react-starter-template) | Actix web + SeaORM + React + Redux + Redux Saga project starter template | DB: Postgres
 - [ZAPP](https://zapp.epics.dev) ([repository](https://github.com/EpicsDAO/zapp)) | ZAPP is a serverless framework made by Rust. Quickly build a scalable GraphQL API web server.
+- [crud-rs](https://github.com/onichandame/crud-rs) | A framework combining async-graphql and sea-orm
 
 ### Open Source Projects
 
@@ -58,6 +59,7 @@ If you have built an app using SeaORM and want to showcase it, feel free to open
 - [RGB Lib](https://github.com/RGB-Tools/rgb-lib) | A library to manage wallets for RGB assets | DB: MySQL, Postgres, SQLite
 - [RCloud](https://github.com/p0rtL6/RCloud) | A self-hosted lightweight cloud drive alternative
 - [Music Player](https://github.com/tsirysndr/music-player) | An extensible music server written in Rust 🚀🎵✨ | DB: SQLite
+- [Linx](https://github.com/whizzes/linx) | Headless URL Shortener written in Rust 🦀
 
 ## Learning Resources
 
