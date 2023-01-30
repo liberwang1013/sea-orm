@@ -4,7 +4,7 @@ use crate::{
 };
 use sea_query::{
     extension::postgres::{Type, TypeCreateStatement},
-    ColumnDef, Iden, Index, IndexCreateStatement, SeaRc, TableCreateStatement,
+    ColumnDef, Expr, Iden, Index, IndexCreateStatement, SeaRc, TableCreateStatement,
 };
 
 impl Schema {
@@ -210,9 +210,11 @@ where
     }
     if let Some(value) = orm_column_def.default_value {
         column_def.default(value);
+    } else if orm_column_def.created_at || orm_column_def.updated_at {
+        column_def.default(Expr::current_timestamp());
     }
     if let Some(value) = orm_column_def.extra {
-        column_def.default(value);
+        column_def.extra(value);
     }
     for primary_key in E::PrimaryKey::iter() {
         if column.to_string() == primary_key.into_column().to_string() {
