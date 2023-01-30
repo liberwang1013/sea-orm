@@ -570,12 +570,12 @@ pub async fn create_check_table(db: &DbConn) -> Result<ExecResult, DbErr> {
         .col(
             ColumnDef::new(check::Column::UpdatedAt)
                 .timestamp_with_time_zone()
-                .default("CURRENT_TIMESTAMP"),
+                .default(Expr::current_timestamp()),
         )
         .col(
             ColumnDef::new(check::Column::CreatedAt)
                 .timestamp_with_time_zone()
-                .default("CURRENT_TIMESTAMP"),
+                .default(Expr::current_timestamp()),
         )
         .to_owned();
 
