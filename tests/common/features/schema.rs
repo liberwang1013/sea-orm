@@ -7,7 +7,7 @@ use sea_orm::{
     ExecResult, Schema,
 };
 use sea_query::{
-    extension::postgres::Type, Alias, BlobSize, ColumnDef, ForeignKeyCreateStatement, IntoIden,
+    extension::postgres::Type, Alias, BlobSize, ColumnDef, Expr, ForeignKeyCreateStatement, IntoIden,
 };
 
 pub async fn create_tables(db: &DatabaseConnection) -> Result<(), DbErr> {
@@ -523,7 +523,13 @@ pub async fn create_teas_table(db: &DbConn) -> Result<ExecResult, DbErr> {
 pub async fn create_binary_table(db: &DbConn) -> Result<ExecResult, DbErr> {
     let create_table_stmt = sea_query::Table::create()
         .table(binary::Entity.table_ref())
-        .col(ColumnDef::new(binary::Column::Id))
+        .col(
+            ColumnDef::new(binary::Column::Id)
+                .integer()
+                .not_null()
+                .auto_increment()
+                .primary_key(),
+        )
         .col(ColumnDef::new(binary::Column::Binary).binary().not_null())
         .col(
             ColumnDef::new(binary::Column::Binary10)
