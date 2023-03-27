@@ -3,11 +3,7 @@ use crate::{
     PrimaryKeyTrait, QueryTrait,
 };
 use core::marker::PhantomData;
-<<<<<<< HEAD
 use sea_query::{Expr, InsertStatement, OnConflict, ValueTuple};
-=======
-use sea_query::{Alias, Expr, Function, InsertStatement, OnConflict, SimpleExpr, ValueTuple};
->>>>>>> 7916606d (try using sql function to get timestamp)
 
 /// Performs INSERT operations on a ActiveModel
 #[derive(Debug)]
@@ -135,8 +131,8 @@ where
         for (idx, col) in <A::Entity as EntityTrait>::Column::iter().enumerate() {
             let av = am.take(col);
             let col_def = col.def();
-            let col_type = col_def.get_column_type();
-            let av_has_val = av.is_set() || av.is_unchanged();
+            let insert_timestamp_col = col_def.created_at || col_def.updated_at;
+            let av_has_val = av.is_set() || av.is_unchanged() || insert_timestamp_col;
             if columns_empty {
                 self.columns.push(av_has_val);
             } else if self.columns[idx] != av_has_val {
